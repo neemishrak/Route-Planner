@@ -4,7 +4,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 @RestController
 public class RoutePlannerController {
@@ -15,14 +15,18 @@ public class RoutePlannerController {
     }
     @GetMapping("/stops/evaluate")
     public StopEvaluation evaluateStop() {
-       return routePlanner.evaluateStop(LocalTime.of(9,0)
-               , 20, LocalTime.of(9,30),LocalTime.of(10,15),46);
+        return routePlanner.evaluateStop(
+                LocalDateTime.of(2026, 10, 25, 9, 0),
+                20,
+                LocalDateTime.of(2026, 10, 25, 9, 30),
+                LocalDateTime.of(2026, 10, 25, 10, 15),
+                46);
     }
 
     @PostMapping("/stops/evaluate")
     public StopEvaluation evaluateStop(
             @RequestBody StopEvaluationRequest request) {
            return routePlanner.evaluateStop(request.previousDeparture, request.travelMinutes
-                   , request.windowStart, request.windowEnd, request.durationMinutes);
+                   , request.windowStart, LocalDateTime.from(request.windowEnd), request.durationMinutes);
     }
 }

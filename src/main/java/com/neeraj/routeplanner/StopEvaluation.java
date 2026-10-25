@@ -1,43 +1,43 @@
 package com.neeraj.routeplanner;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 public class StopEvaluation {
-    private LocalTime arrival;
-    private LocalTime departure;
-    private LocalTime serviceStart;
+    private LocalDateTime arrival;
+    private LocalDateTime departure;
+    private LocalDateTime serviceStart;
     private boolean fitsWindow;
     //getters and Setters//
 
-    public StopEvaluation(LocalTime arrival, LocalTime serviceStart,
-                          LocalTime departure, boolean fitsWindow) {
+    public StopEvaluation(LocalDateTime arrival, LocalDateTime serviceStart,
+                          LocalDateTime departure, boolean fitsWindow) {
         this.arrival = arrival;
         this.departure = departure;
         this.fitsWindow = fitsWindow;
         this.serviceStart = serviceStart;
     }
 
-    public LocalTime getArrival() {
+    public LocalDateTime getArrival() {
         return arrival;
     }
 
-    public LocalTime getDeparture() {
+    public LocalDateTime getDeparture() {
         return departure;
     }
 
-    public LocalTime getServiceStart() {
+    public LocalDateTime getServiceStart() {
         return serviceStart;
     }
 
-    public void setArrival(LocalTime arrival) {
+    public void setArrival(LocalDateTime arrival) {
         this.arrival = arrival;
     }
 
-    public void setDeparture(LocalTime departure) {
+    public void setDeparture(LocalDateTime departure) {
         this.departure = departure;
     }
 
-    public void setServiceStart(LocalTime serviceStart) {
+    public void setServiceStart(LocalDateTime serviceStart) {
         this.serviceStart = serviceStart;
     }
 

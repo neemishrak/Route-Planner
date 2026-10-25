@@ -2,7 +2,7 @@ package com.neeraj.routeplanner;
 
 import org.springframework.stereotype.Service;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
 
 /**
  * Calculates timing and appointment-window feasibility for a single stop.
@@ -10,7 +10,7 @@ import java.time.LocalTime;
  * <p>Travel time is supplied by the caller. This class does not currently
  * retrieve traffic estimates or choose the order of stops.
  *
- * <p>Current limitation: LocalTime arithmetic wraps at midnight. Calculations
+ * <p>Current limitation: LocalDateTime arithmetic wraps at midnight. Calculations
  * that cross midnight are not yet detected and may produce incorrect results.
  */
 @Service
@@ -19,8 +19,8 @@ public class RoutePlanner {
     /**
      * Returns the later of arrival and the appointment window's opening time.
      */
-    public LocalTime calculateServiceStart(
-            LocalTime arrival, LocalTime windowStart) {
+    public LocalDateTime calculateServiceStart(
+            LocalDateTime arrival, LocalDateTime windowStart) {
 
         // Early arrivals must wait until the appointment window opens.
         if (arrival.isBefore(windowStart)) {
@@ -32,8 +32,8 @@ public class RoutePlanner {
     /**
      * Calculates departure by adding service duration to the service start.
      */
-    public LocalTime calculateDeparture(
-            LocalTime serviceStart, int durationMinutes) {
+    public LocalDateTime calculateDeparture(
+            LocalDateTime serviceStart, int durationMinutes) {
 
         return serviceStart.plusMinutes(durationMinutes);
     }
@@ -43,7 +43,7 @@ public class RoutePlanner {
      * Assumes service starts no earlier than the window opening.
      */
     public boolean fitsWindow(
-            LocalTime departure, LocalTime windowEnd) {
+            LocalDateTime departure, LocalDateTime windowEnd) {
 
         // Finishing exactly at the window end is permitted.
         return !departure.isAfter(windowEnd);
@@ -52,8 +52,8 @@ public class RoutePlanner {
     /**
      * Calculates arrival using the supplied travel duration.
      */
-    public LocalTime calculateArrival(
-            LocalTime previousDeparture, int travelMinutes) {
+    public LocalDateTime calculateArrival(
+            LocalDateTime previousDeparture, int travelMinutes) {
 
         return previousDeparture.plusMinutes(travelMinutes);
     }
@@ -74,10 +74,10 @@ public class RoutePlanner {
      *         a duration is negative, or the window end precedes its start
      */
     public StopEvaluation evaluateStop(
-            LocalTime previousDeparture,
+            LocalDateTime previousDeparture,
             int travelMinutes,
-            LocalTime windowStart,
-            LocalTime windowEnd,
+            LocalDateTime windowStart,
+            LocalDateTime windowEnd,
             int durationMinutes) {
 
         // Validate required times before invoking methods on them.
@@ -104,9 +104,9 @@ public class RoutePlanner {
                     "Window end Cannot be before window Start");
         }
 
-        LocalTime arrival = calculateArrival(previousDeparture, travelMinutes);
-        LocalTime serviceStart = calculateServiceStart(arrival, windowStart);
-        LocalTime departure = calculateDeparture(serviceStart, durationMinutes);
+        LocalDateTime arrival = calculateArrival(previousDeparture, travelMinutes);
+        LocalDateTime serviceStart = calculateServiceStart(arrival, windowStart);
+        LocalDateTime departure = calculateDeparture(serviceStart, durationMinutes);
         boolean fitsWindow = fitsWindow(departure, windowEnd);
 
         return new StopEvaluation(

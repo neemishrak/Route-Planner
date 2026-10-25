@@ -1,12 +1,13 @@
 package com.neeraj.routeplanner;
 
-import java.time.LocalTime;
+import java.time.LocalDateTime;
+import java.time.LocalDateTime;
 
 public class StopEvaluationRequest {
-    LocalTime previousDeparture;
+    LocalDateTime previousDeparture;
     int travelMinutes;
-    LocalTime windowStart;
-    LocalTime windowEnd;
+    LocalDateTime windowStart;
+    LocalDateTime windowEnd;
     int durationMinutes;
 
     public int getDurationMinutes() {
@@ -17,15 +18,15 @@ public class StopEvaluationRequest {
         return travelMinutes;
     }
 
-    public LocalTime getPreviousDeparture() {
+    public LocalDateTime getPreviousDeparture() {
         return previousDeparture;
     }
 
-    public LocalTime getWindowEnd() {
+    public LocalDateTime getWindowEnd() {
         return windowEnd;
     }
 
-    public LocalTime getWindowStart() {
+    public LocalDateTime getWindowStart() {
         return windowStart;
     }
 
@@ -33,7 +34,7 @@ public class StopEvaluationRequest {
         this.durationMinutes = durationMinutes;
     }
 
-    public void setPreviousDeparture(LocalTime previousDeparture) {
+    public void setPreviousDeparture(LocalDateTime previousDeparture) {
         this.previousDeparture = previousDeparture;
     }
 
@@ -41,11 +42,11 @@ public class StopEvaluationRequest {
         this.travelMinutes = travelMinutes;
     }
 
-    public void setWindowEnd(LocalTime windowEnd) {
+    public void setWindowEnd(LocalDateTime windowEnd) {
         this.windowEnd = windowEnd;
     }
 
-    public void setWindowStart(LocalTime windowStart) {
+    public void setWindowStart(LocalDateTime windowStart) {
         this.windowStart = windowStart;
     }
 }
