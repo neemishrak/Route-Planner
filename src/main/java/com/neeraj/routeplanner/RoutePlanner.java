@@ -28,7 +28,20 @@ public class RoutePlanner {
             LocalTime windowStart,
             LocalTime windowEnd,
             int durationMinutes) {
-
+            //Validation and Exception handling//
+            if (windowEnd == null || previousDeparture == null || windowStart == null){
+                throw new IllegalArgumentException("Previous departure, window start and window end are required");
+            }
+            if (durationMinutes < 0){
+                throw new IllegalArgumentException("Service duration cannot be negative");
+            }
+            if (travelMinutes < 0){
+                throw new IllegalArgumentException("Travel time cannot be negative");
+            }
+            if (windowEnd.isBefore(windowStart)){
+                throw new IllegalArgumentException("Window end Cannot be before window Start");
+            }
+            //Stop Evaluation Checks//
             LocalTime arrival = calculateArrival(previousDeparture, travelMinutes);
             LocalTime serviceStart = calculateServiceStart(arrival, windowStart);
             LocalTime departure = calculateDeparture(serviceStart, durationMinutes);
