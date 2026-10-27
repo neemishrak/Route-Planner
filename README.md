@@ -123,6 +123,18 @@ The design is intentionally incremental:
 - route composition is not yet multi-stop optimized
 - timezone-aware scheduling and real-world map integration are still future work
 
+  ## Current architecture
+
+```mermaid
+classDiagram
+    RoutePlannerController --> RoutePlanner : calls
+    RoutePlanner ..> StopEvaluation : creates
+    RoutePlanner ..> Stop : reads
+    Stop --> Location : location
+    Stop --> StopType : type
+    Stop --> "0..1" TimeWindow : optional window
+```
+
 ## Roadmap
 
 Planned next steps include:
