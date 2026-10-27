@@ -47,7 +47,6 @@ Route-Planner/
 ├── mvnw.cmd
 ├── pom.xml
 ├── README.md
-└── .
 ```
 
 ## Current functionality
@@ -67,6 +66,10 @@ The service does the following:
 3. Adds service duration to determine the departure time.
 4. Verifies whether the departure falls within the appointment window.
 5. Rejects invalid values with validation errors.
+
+Appointment windows are optional. When both boundaries are omitted,
+service starts on arrival and `fitsWindow` is true. Supplying only
+one boundary returns HTTP 400.  
 
 ## Run locally
 
@@ -117,13 +120,17 @@ The system allows a service to end exactly at the window end.
 
 The project includes `Stop`, `StopType`, `Location`, and `TimeWindow` models, but the current controller and evaluation flow are centered on a single-stop calculation rather than a full route optimization engine.
 
+The planner can evaluate a Stop object through an overloaded method,
+demonstrated in PlannerDemo. The POST endpoint still accepts the
+individual scheduling inputs through StopEvaluationRequest.
 The design is intentionally incremental:
 
 - travel time is supplied by the caller instead of fetched from a traffic provider
 - route composition is not yet multi-stop optimized
-- timezone-aware scheduling and real-world map integration are still future work
+- timezone-aware scheduling and real-world map integration are still future work 
 
-  ## Current architecture
+## Current architecture
+
 
 ```mermaid
 classDiagram
