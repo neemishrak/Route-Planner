@@ -1,28 +1,78 @@
 # Route Planner
 
-A learning-first Java and Spring Boot project working toward a
-traffic-aware, multi-stop appointment planner.
+A Java and Spring Boot learning project for a traffic-aware, multi-stop appointment and route planner. The current implementation focuses on the core scheduling logic for a single stop: it calculates arrival, waits for an appointment window to open if needed, computes service start and departure, and checks whether the full service fits within the allowed time window.
 
-## Current functionality
+## Highlights
 
-- Evaluate arrival, service start, and departure for a single stop.
-- Wait until the appointment window opens when arriving early.
-- Check whether the entire service fits inside the window.
-- Preserve dates when travel or service crosses midnight.
-- Accept evaluation inputs through a POST endpoint.
-- Reject missing times, negative durations, and reversed windows
-  with HTTP 400 responses.
+- Evaluate a single stop using travel time, appointment window, and service duration
+- Wait until the appointment window opens if the traveler arrives early
+- Preserve local date/time values across midnight boundaries
+- Reject invalid input such as missing times, negative durations, and reversed windows
+- Expose the scheduling logic via a Spring Boot REST API
 
-## Technology
+## Tech stack
 
-- Java 17 target
+- Java 17
 - Spring Boot 4.1.2
 - Maven Wrapper
 - Spring Web MVC
+- Java time API (`java.time.LocalDateTime`)
+
+## Project structure
+
+```text
+Route-Planner/
+├── src/
+│   ├── main/
+│   │   ├── java/com/neeraj/routeplanner/
+│   │   │   ├── GlobalExceptionHandler.java
+│   │   │   ├── Location.java
+│   │   │   ├── PlannerDemo.java
+│   │   │   ├── RoutePlanner.java
+│   │   │   ├── RoutePlannerApplication.java
+│   │   │   ├── RoutePlannerController.java
+│   │   │   ├── Stop.java
+│   │   │   ├── StopEvaluation.java
+│   │   │   ├── StopEvaluationRequest.java
+│   │   │   ├── StopType.java
+│   │   │   └── TimeWindow.java
+│   │   └── resources/
+│   │       └── application.properties
+│   └── test/java/com/neeraj/routeplanner/
+│       └── RoutePlannerApplicationTests.java
+├── .mvn/
+├── .gitattributes
+├── .gitignore
+├── mvnw
+├── mvnw.cmd
+├── pom.xml
+├── README.md
+└── .
+```
+
+## Current functionality
+
+The planner currently supports evaluating a single stop with the following inputs:
+
+- `previousDeparture`: the departure time from the previous location
+- `travelMinutes`: duration to reach the stop
+- `windowStart`: earliest allowed service start time
+- `windowEnd`: latest allowed completion time
+- `durationMinutes`: time required for the appointment or service
+
+The service does the following:
+
+1. Calculates arrival from the previous departure and travel time.
+2. If the arrival is before the window start, it waits until the opening time.
+3. Adds service duration to determine the departure time.
+4. Verifies whether the departure falls within the appointment window.
+5. Rejects invalid values with validation errors.
 
 ## Run locally
 
-A compatible JDK is required.
+Requirements:
+
+- JDK 17 or later
 
 ```bash
 git clone https://github.com/neemishrak/Route-Planner.git
@@ -30,11 +80,13 @@ cd Route-Planner
 ./mvnw spring-boot:run
 ```
 
-The application listens on port 8080 by default.
+The application runs on port `8080` by default.
 
-## Example request
+## API endpoint
 
-Run this in a second terminal while the application is running:
+### POST `/stops/evaluate`
+
+Send a JSON body like the example below:
 
 ```bash
 curl -i -X POST http://localhost:8080/stops/evaluate \
@@ -48,7 +100,7 @@ curl -i -X POST http://localhost:8080/stops/evaluate \
   }'
 ```
 
-Expected response body:
+Example response:
 
 ```json
 {
@@ -59,37 +111,40 @@ Expected response body:
 }
 ```
 
-Finishing exactly at the window end is allowed.
+The system allows a service to end exactly at the window end.
 
 ## Domain model in progress
 
-The project includes Stop, StopType, Location, and TimeWindow classes.
-These are not yet integrated into the evaluation endpoint.
+The project includes `Stop`, `StopType`, `Location`, and `TimeWindow` models, but the current controller and evaluation flow are centered on a single-stop calculation rather than a full route optimization engine.
 
-Travel time belongs to a journey between locations, rather than
-being a fixed property of a stop.
+The design is intentionally incremental:
 
-## Planned features
+- travel time is supplied by the caller instead of fetched from a traffic provider
+- route composition is not yet multi-stop optimized
+- timezone-aware scheduling and real-world map integration are still future work
 
-- Evaluate multiple stops in a fixed order.
-- Introduce deterministic mock travel estimates based on departure time.
-- Explore stop orders using backtracking and pruning.
-- Investigate dynamic programming for suitable planning states.
-- Add a map-based interface.
-- Investigate real traffic-aware routing providers.
-- Support timezone-aware scheduling.
+## Roadmap
 
-## Current limitations
+Planned next steps include:
 
-- The API evaluates one stop at a time.
-- Travel duration is supplied by the caller.
-- No map, live traffic integration, or persistence is implemented.
-- Date-time values are interpreted in one shared timezone;
-  timezone conversion and daylight-saving handling are not implemented.
+- evaluate multiple stops in a fixed sequence
+- incorporate deterministic mock travel estimates
+- explore stop-order search with backtracking and pruning
+- investigate dynamic programming for route feasibility states
+- add a map-based or UI-based visualization layer
+- integrate real traffic-aware routing providers
+- support timezone-aware scheduling
 
-## Learning approach
+## Learning goals
 
-This project is being built incrementally with AI-assisted tutoring
-and code review. The focus is understanding Java, Spring, domain
-modeling, graph algorithms, and backtracking—not simply generating
-a complete application.
+This project is being built as a learning-first implementation focused on:
+
+- Java fundamentals and clean OO modeling
+- Spring Boot and MVC APIs
+- domain modeling for route and scheduling problems
+- algorithmic thinking for route planning and optimization
+- practical experience with testing and validation
+
+## Current status
+
+This repository is a working learning prototype for route scheduling logic, not yet a complete production route-planning application. The most mature behavior is the time-window evaluation flow for a single appointment stop.
