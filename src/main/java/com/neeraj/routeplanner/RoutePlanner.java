@@ -10,8 +10,7 @@ import java.time.LocalDateTime;
  * <p>Travel time is supplied by the caller. This class does not currently
  * retrieve traffic estimates or choose the order of stops.
  *
- * <p>Current limitation: LocalDateTime arithmetic wraps at midnight. Calculations
- * that cross midnight are not yet detected and may produce incorrect results.
+ * <p>Uses local dates and times in one shared timezone; timezone conversion is not supported.
  */
 @Service
 public class RoutePlanner {
@@ -81,11 +80,8 @@ public class RoutePlanner {
             int durationMinutes) {
 
         // Validate required times before invoking methods on them.
-        if (windowEnd == null
-                || previousDeparture == null
-                || windowStart == null) {
-            throw new IllegalArgumentException(
-                    "Previous departure, window start and window end are required");
+        if (previousDeparture == null) {
+            throw new IllegalArgumentException("Previous departure is required");
         }
 
         if (durationMinutes < 0) {
@@ -97,8 +93,21 @@ public class RoutePlanner {
             throw new IllegalArgumentException(
                     "Travel time cannot be negative");
         }
+        // A window must be completely supplied or completely absent.
+        if ((windowStart == null && windowEnd != null)
+                || (windowStart != null && windowEnd == null)) {
+            throw new IllegalArgumentException(
+                    "Window start and window end must be supplied together");
+        }
+        // Without a window, service starts immediately on arrival.
+        if (windowStart == null) {
+            LocalDateTime arrival = calculateArrival(previousDeparture, travelMinutes);
+            LocalDateTime departure = calculateDeparture(arrival, durationMinutes);
 
-        // Appointment windows currently describe a period within one day.
+            return new StopEvaluation(arrival, arrival, departure, true);
+        }
+
+        // Appointment windows currently describe a period .
         if (windowEnd.isBefore(windowStart)) {
             throw new IllegalArgumentException(
                     "Window end Cannot be before window Start");
@@ -112,4 +121,31 @@ public class RoutePlanner {
         return new StopEvaluation(
                 arrival, serviceStart, departure, fitsWindow);
     }
+     /**
+     * Evaluates a stop using its appointment window and service duration.
+     * Delegates calculations and input validation to the five-argument overload.
+     *
+     * @param previousDeparture departure time from the preceding location
+     * @param travelMinutes travel duration to this stop, in minutes
+     * @param stop stop to evaluate; its time window may be absent
+     * @return calculated timing and appointment-window feasibility
+     */
+    public StopEvaluation evaluateStop(LocalDateTime previousDeparture, int travelMinutes, Stop stop) {
+        if (stop == null) {
+            throw new IllegalArgumentException("Stop is required");
+        }
+        TimeWindow window = stop.getTimeWindow();
+
+        if (window == null) {
+            return evaluateStop(
+                    previousDeparture, travelMinutes, null, null,
+                    stop.getDurationMinutes());
+        }
+
+        return evaluateStop(
+                previousDeparture, travelMinutes,
+                window.getWindowStart(), window.getWindowEnd(),
+                stop.getDurationMinutes());
+    }
+
 }

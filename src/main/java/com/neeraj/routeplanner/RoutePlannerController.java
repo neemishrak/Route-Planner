@@ -26,7 +26,11 @@ public class RoutePlannerController {
     @PostMapping("/stops/evaluate")
     public StopEvaluation evaluateStop(
             @RequestBody StopEvaluationRequest request) {
-           return routePlanner.evaluateStop(request.previousDeparture, request.travelMinutes
-                   , request.windowStart, LocalDateTime.from(request.windowEnd), request.durationMinutes);
+        return routePlanner.evaluateStop(
+                request.getPreviousDeparture(),
+                request.getTravelMinutes(),
+                request.getWindowStart(),
+                request.getWindowEnd(),
+                request.getDurationMinutes());
     }
 }
