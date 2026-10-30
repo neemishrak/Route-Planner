@@ -3,6 +3,8 @@ package com.neeraj.routeplanner;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Calculates timing and appointment-window feasibility for a single stop.
@@ -16,7 +18,7 @@ import java.time.LocalDateTime;
 public class RoutePlanner {
 
     /**
-     * Returns the later of arrival and the appointment window's opening time.
+     * Returns the latter of arrival and the appointment window's opening time.
      */
     public LocalDateTime calculateServiceStart(
             LocalDateTime arrival, LocalDateTime windowStart) {
@@ -147,5 +149,30 @@ public class RoutePlanner {
                 window.getWindowStart(), window.getWindowEnd(),
                 stop.getDurationMinutes());
     }
+    /**
+     * Evaluates one fixed stop order, carrying each departure into the next leg.
+     *
+     * @param stops stops in visiting order
+     * @param travelMinutes incoming travel minutes for each stop;
+     *                      the first entry covers the start location to stop 0
+     * @param initialDeparture departure date and time from the start location
+     * @return stop evaluations in the supplied order
+     */
+    public List<StopEvaluation> evaluateRoute(
+            List<Stop> stops,
+            int[] travelMinutes,
+            LocalDateTime initialDeparture){
+        List<StopEvaluation> evaluations = new ArrayList<>();
+        LocalDateTime previousDeparture = initialDeparture;
+        for (int i = 0; i < stops.size(); i++){
+            StopEvaluation result = evaluateStop(previousDeparture,travelMinutes[i],stops.get(i));
+            evaluations.add(result);
+            previousDeparture = result.getDeparture();
+        }
+        return evaluations;
+
+    }
+
+
 
 }
