@@ -8,6 +8,19 @@ import java.util.List;
 
 public class PlannerDemo {
     public static void main(String[] args) {
+       Location startLocation = new Location();
+       startLocation.setId("loc-home");
+       startLocation.setName("Home");
+
+       Location jobLocation = new Location();
+       jobLocation.setId("loc-job");
+       jobLocation.setName("Client site");
+
+       Location suppliesLocation = new Location();
+       suppliesLocation.setId("loc-supplies");
+       suppliesLocation.setName("Supplies shop");
+
+
        TimeWindow timeWindowA = new TimeWindow();
        timeWindowA.setWindowStart(LocalDateTime.of(2026,10,26,9,45));
        timeWindowA.setWindowEnd(LocalDateTime.of(2026,10,26,10,15));
@@ -20,7 +33,7 @@ public class PlannerDemo {
        stopA.setRequired(true);
        stopA.setStopType(StopType.JOB);
        stopA.setName("Job - Design Consultation");
-       stopA.setDurationMinutes(45);
+       stopA.setDurationMinutes(40);
        stopA.setId("stop-a");
 
 
@@ -32,16 +45,21 @@ public class PlannerDemo {
        stopB.setDurationMinutes(20);
        stopB.setId("stop-b");
 
+       stopA.setLocation(jobLocation);
+       stopB.setLocation(suppliesLocation);
+
        List<Stop> stops = new ArrayList<>();
        stops.add(stopA);
        stops.add(stopB);
-       int[] travelMinutes = new int[]{25,30};
        List<StopEvaluation> evaluations =
-               routePlanner.evaluateRoute(stops, travelMinutes, initialDeparture);
-       for (int i = 0; i < evaluations.size(); i++){
-          System.out.println(stops.get(i).getName() + " "+  stops.get(i).getStopType() + "   " +
-                           evaluations.get(i).getArrival() + " " + evaluations.get(i).getDeparture() + "  " +
-                  evaluations.get(i).isFitsWindow());
+               routePlanner.evaluateRoute(stops, startLocation,initialDeparture);
+       for (StopEvaluation evaluation : evaluations) {
+          System.out.println(
+                  evaluation.getStop().getName() + " "
+                          + evaluation.getStop().getStopType() + " | "
+                          + evaluation.getArrival() + " | "
+                          + evaluation.getDeparture() + " | "
+                          + evaluation.isFitsWindow());
        }
 
 

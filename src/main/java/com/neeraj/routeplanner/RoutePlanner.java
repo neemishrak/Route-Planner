@@ -159,21 +159,23 @@ public class RoutePlanner {
      * Evaluates one fixed stop order, carrying each departure into the next leg.
      *
      * @param stops stops in visiting order
-     * @param travelMinutes incoming travel minutes for each stop;
-     *                      the first entry covers the start location to stop 0
+     * @param startLocation location from which the route begins
      * @param initialDeparture departure date and time from the start location
      * @return stop evaluations in the supplied order
      */
     public List<StopEvaluation> evaluateRoute(
             List<Stop> stops,
-            int[] travelMinutes,
+            Location startLocation,
             LocalDateTime initialDeparture){
         List<StopEvaluation> evaluations = new ArrayList<>();
+        Location previousLocation = startLocation;
         LocalDateTime previousDeparture = initialDeparture;
-        for (int i = 0; i < stops.size(); i++){
-            StopEvaluation result = evaluateStop(previousDeparture,travelMinutes[i],stops.get(i));
+        for (Stop stop : stops) {
+            StopEvaluation result = evaluateStop(previousDeparture,
+                    travelTimeProvider.getTravelMinutes(previousLocation, stop.getLocation(), previousDeparture), stop);
             evaluations.add(result);
             previousDeparture = result.getDeparture();
+            previousLocation = stop.getLocation();
         }
         return evaluations;
 
