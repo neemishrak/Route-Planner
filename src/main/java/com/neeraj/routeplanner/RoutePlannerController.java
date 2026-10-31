@@ -15,12 +15,21 @@ public class RoutePlannerController {
     }
     @GetMapping("/stops/evaluate")
     public StopEvaluation evaluateStop() {
+        TimeWindow timeWindow = new TimeWindow();
+        timeWindow.setWindowStart(LocalDateTime.of(2026,10,25,9,30));
+        timeWindow.setWindowEnd(LocalDateTime.of(2026,10,25,10,45));
+
+        Stop demoStop = new Stop();
+        demoStop.setName("Demo Stop");
+        demoStop.setRequired(true);
+        demoStop.setStopType(StopType.JOB);
+        demoStop.setDurationMinutes(45);
+        demoStop.setTimeWindow(timeWindow);
+        demoStop.setId("DM");
         return routePlanner.evaluateStop(
                 LocalDateTime.of(2026, 10, 25, 9, 0),
                 20,
-                LocalDateTime.of(2026, 10, 25, 9, 30),
-                LocalDateTime.of(2026, 10, 25, 10, 15),
-                46);
+                demoStop);
     }
 
     @PostMapping("/stops/evaluate")
@@ -29,8 +38,6 @@ public class RoutePlannerController {
         return routePlanner.evaluateStop(
                 request.getPreviousDeparture(),
                 request.getTravelMinutes(),
-                request.getWindowStart(),
-                request.getWindowEnd(),
-                request.getDurationMinutes());
+                request.getStop());
     }
 }

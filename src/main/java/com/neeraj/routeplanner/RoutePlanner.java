@@ -65,6 +65,7 @@ public class RoutePlanner {
      * <p>Invalid inputs are rejected. Valid inputs that exceed the appointment
      * window return an evaluation with fitsWindow set to false.
      *
+     * @param stop stop along the journey
      * @param previousDeparture departure time from the preceding location
      * @param travelMinutes travel duration to this stop; zero is allowed
      * @param windowStart earliest permitted service start
@@ -75,6 +76,7 @@ public class RoutePlanner {
      *         a duration is negative, or the window end precedes its start
      */
     public StopEvaluation evaluateStop(
+            Stop stop,
             LocalDateTime previousDeparture,
             int travelMinutes,
             LocalDateTime windowStart,
@@ -106,7 +108,7 @@ public class RoutePlanner {
             LocalDateTime arrival = calculateArrival(previousDeparture, travelMinutes);
             LocalDateTime departure = calculateDeparture(arrival, durationMinutes);
 
-            return new StopEvaluation(arrival, arrival, departure, true);
+            return new StopEvaluation(stop, arrival, arrival, departure, true);
         }
 
         // Appointment windows currently describe a period .
@@ -120,7 +122,7 @@ public class RoutePlanner {
         LocalDateTime departure = calculateDeparture(serviceStart, durationMinutes);
         boolean fitsWindow = fitsWindow(departure, windowEnd);
 
-        return new StopEvaluation(
+        return new StopEvaluation(stop,
                 arrival, serviceStart, departure, fitsWindow);
     }
      /**
@@ -140,12 +142,12 @@ public class RoutePlanner {
 
         if (window == null) {
             return evaluateStop(
-                    previousDeparture, travelMinutes, null, null,
+                   stop, previousDeparture, travelMinutes, null, null,
                     stop.getDurationMinutes());
         }
 
         return evaluateStop(
-                previousDeparture, travelMinutes,
+               stop, previousDeparture, travelMinutes,
                 window.getWindowStart(), window.getWindowEnd(),
                 stop.getDurationMinutes());
     }

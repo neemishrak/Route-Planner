@@ -3,14 +3,16 @@ package com.neeraj.routeplanner;
 import java.time.LocalDateTime;
 
 public class StopEvaluation {
+    private Stop stop;
     private LocalDateTime arrival;
     private LocalDateTime departure;
     private LocalDateTime serviceStart;
     private boolean fitsWindow;
     //getters and Setters//
 
-    public StopEvaluation(LocalDateTime arrival, LocalDateTime serviceStart,
+    public StopEvaluation(Stop stop, LocalDateTime arrival, LocalDateTime serviceStart,
                           LocalDateTime departure, boolean fitsWindow) {
+        this.stop = stop;
         this.arrival = arrival;
         this.departure = departure;
         this.fitsWindow = fitsWindow;
@@ -47,5 +49,8 @@ public class StopEvaluation {
 
     public boolean isFitsWindow() {
         return fitsWindow;
+    }
+    public Stop getStop() {
+        return stop;
     }
 }
