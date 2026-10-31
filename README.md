@@ -1,32 +1,29 @@
 # Route Planner
 
-A Java and Spring Boot learning project for a traffic-aware, multi-stop appointment and route planner. The implementation has evolved beyond a single-stop prototype into a small scheduling service [...] 
+A Java and Spring Boot learning project for a traffic-aware, multi-stop appointment and route planner.
 
-## Latest changes
+This project models the scheduling logic behind a route planner that evaluates stop timing, appointment windows, and fixed-order route sequencing without yet integrating live traffic data or map services.
 
-The project now includes:
+## Overview
 
-- a Spring MVC controller with both demo and request-driven stop evaluation endpoints
-- validation for missing times, negative durations, and invalid appointment windows
-- a reusable `RoutePlanner` service with:
-  - `calculateArrival(...)`
-  - `calculateServiceStart(...)`
-  - `calculateDeparture(...)`
-  - `fitsWindow(...)`
-  - `evaluateStop(...)` overloads
-  - `evaluateRoute(...)` for a fixed stop sequence
-- domain models for `Stop`, `Location`, `TimeWindow`, and `StopType`
-- `StopEvaluation` and `StopEvaluationRequest` for API payloads
-- centralized `GlobalExceptionHandler` for HTTP 400 responses on invalid input
+The application focuses on one core question: given a previous departure time, travel duration, and a stop's appointment window, when should the traveler arrive, when should service begin, and when should they depart?
 
-## Highlights
+It currently supports:
 
-- Evaluate a single stop using travel time, appointment window, and service duration
-- Wait until the appointment window opens when the traveler arrives early
+- single-stop timing evaluation
+- appointment window handling with waiting logic
+- validation for invalid inputs
+- fixed-order route evaluation that carries each departure into the next leg
+- a Spring MVC REST API for demo and request-driven evaluation
+
+## Features
+
+- Evaluate a stop using travel time, appointment window, and service duration
+- Wait until the appointment window opens when arriving early
 - Preserve local date/time values across midnight boundaries
-- Reject invalid input such as missing times, negative durations, and reversed windows
+- Reject invalid input such as missing times, negative travel/service duration, and reversed windows
 - Evaluate a fixed route in sequence using each stop's departure as the next leg's starting point
-- Expose the scheduling logic through a Spring Boot REST API
+- Expose the scheduling logic through a Spring Boot API
 
 ## Tech stack
 
@@ -38,130 +35,13 @@ The project now includes:
 
 ## Architecture
 
-The application follows a small layered architecture: HTTP handling in the controller, scheduling logic in the service layer, and domain modeling for route and time-window concepts.
+The project uses a small layered design:
 
-```mermaid
-classDiagram
-    direction LR
-
-    class RoutePlannerApplication
-    class RoutePlannerController {
-        +evaluateStop() StopEvaluation
-        +evaluateStop(request: StopEvaluationRequest) StopEvaluation
-    }
-    class RoutePlanner {
-        +calculateArrival(previousDeparture, travelMinutes)
-        +calculateServiceStart(arrival, windowStart)
-        +calculateDeparture(serviceStart, durationMinutes)
-        +fitsWindow(departure, windowEnd)
-        +evaluateStop(stop, previousDeparture, travelMinutes, windowStart, windowEnd, durationMinutes)
-        +evaluateStop(previousDeparture, travelMinutes, stop)
-        +evaluateRoute(stops, travelMinutes, initialDeparture)
-    }
-    class StopEvaluationRequest {
-        -Stop stop
-        -LocalDateTime previousDeparture
-        -int travelMinutes
-        +getStop()
-        +getPreviousDeparture()
-        +getTravelMinutes()
-    }
-    class StopEvaluation {
-        -Stop stop
-        -LocalDateTime arrival
-        -LocalDateTime serviceStart
-        -LocalDateTime departure
-        -boolean fitsWindow
-        +getArrival()
-        +getServiceStart()
-        +getDeparture()
-        +getFitsWindow()
-    }
-    class Stop {
-        -String id
-        -String name
-        -StopType stopType
-        -TimeWindow timeWindow
-        -Location location
-        -int durationMinutes
-        -boolean required
-        +getDurationMinutes()
-        +isRequired()
-    }
-    class Location {
-        -String name
-        -String address
-        -Double latitude
-        -Double longitude
-    }
-    class TimeWindow {
-        -LocalDateTime windowStart
-        -LocalDateTime windowEnd
-    }
-    class StopType {
-        <<enumeration>>
-        JOB
-        PIT_STOP
-        HOME
-        BREAK
-        HQ
-    }
-    class PlannerDemo {
-        +main(...)
-    }
-    class GlobalExceptionHandler {
-        +handleException(...)
-    }
-    class IllegalArgumentException
-
-    RoutePlannerApplication --> RoutePlannerController
-    RoutePlannerController --> RoutePlanner
-    RoutePlannerController --> StopEvaluationRequest
-    RoutePlannerController --> StopEvaluation
-    PlannerDemo --> RoutePlanner
-    PlannerDemo --> Stop
-    RoutePlanner --> Stop
-    RoutePlanner --> TimeWindow
-    RoutePlanner --> StopEvaluation
-    RoutePlanner --> StopEvaluationRequest
-    Stop --> TimeWindow
-    Stop --> Location
-    Stop --> StopType
-    StopEvaluation --> Stop
-    GlobalExceptionHandler ..> IllegalArgumentException
-```
-
-```mermaid
-sequenceDiagram
-    actor Client
-    participant Controller as RoutePlannerController
-    participant Service as RoutePlanner
-    participant StopModel as Stop
-    participant Window as TimeWindow
-
-    Client->>Controller: POST /stops/evaluate
-    Controller->>Service: evaluateStop(previousDeparture, travelMinutes, stop)
-    Service->>StopModel: getDurationMinutes()
-    StopModel-->>Service: durationMinutes
-    Service->>StopModel: getTimeWindow()
-    StopModel-->>Service: TimeWindow
-    Service->>Window: getWindowStart()
-    Window-->>Service: windowStart
-    Service->>Window: getWindowEnd()
-    Window-->>Service: windowEnd
-    Service->>Service: calculate arrival, serviceStart, departure
-    Service-->>Controller: StopEvaluation
-    Controller-->>Client: JSON response
-```
-
-### Layer responsibilities
-
-- `RoutePlannerController`: exposes the API endpoints and delegates scheduling work.
-- `RoutePlanner`: contains the core logic for evaluating arrival, service start, departure, window fit, and route sequences.
-- `Stop`, `Location`, `TimeWindow`, `StopType`: represent route and appointment domain concepts.
-- `StopEvaluation`: the result returned to API callers.
-- `StopEvaluationRequest`: inbound request payload for `/stops/evaluate`.
-- `GlobalExceptionHandler`: converts invalid inputs into readable HTTP 400 responses.
+- `RoutePlannerController`: REST API endpoints
+- `RoutePlanner`: scheduling calculations and validation
+- `Stop`, `Location`, `TimeWindow`, `StopType`: domain model
+- `StopEvaluation`: response object returned to the client
+- `GlobalExceptionHandler`: converts invalid input into HTTP 400 responses
 
 ## Project structure
 
@@ -170,7 +50,7 @@ Route-Planner/
 ├── src/
 │   ├── main/
 │   │   ├── java/com/neeraj/routeplanner/
-│   │   │   ├���─ GlobalExceptionHandler.java
+│   │   │   ├── GlobalExceptionHandler.java
 │   │   │   ├── Location.java
 │   │   │   ├── PlannerDemo.java
 │   │   │   ├── RoutePlanner.java
@@ -192,46 +72,33 @@ Route-Planner/
 ├── mvnw.cmd
 ├── pom.xml
 ├── README.md
-└── .github/ (if added later)
+└── .github/
 ```
 
-## Core functionality
+## Core logic
 
-The planner currently supports the following behaviors:
+The planner currently supports these behaviors:
 
 ### Single-stop evaluation
 
-`RoutePlanner.evaluateStop(...)` evaluates a stop using:
+`RoutePlanner.evaluateStop(...)` computes:
 
-- `previousDeparture`: the departure time from the preceding location
-- `travelMinutes`: duration to reach the stop
-- `windowStart`: earliest allowed service start time
-- `windowEnd`: latest allowed service completion time
-- `durationMinutes`: time required for the appointment or service
+- arrival time from previous departure + travel duration
+- service start, waiting until the appointment window opens if needed
+- departure time after service duration
+- whether the stop remains within the appointment window
 
-The logic does the following:
+Validation ensures:
 
-1. calculates arrival from the previous departure and travel time
-2. waits until the appointment window opens when arriving early
-3. adds service duration to determine the departure time
-4. verifies whether the departure stays inside the appointment window
-5. rejects invalid values with validation errors
-
-Appointment windows are optional. When both boundaries are missing, service starts on arrival and `fitsWindow` is `true`. Supplying only one boundary returns HTTP 400.
+- required times are present
+- travel time is not negative
+- duration is not negative
+- both appointment window boundaries are supplied together
+- window end is not before window start
 
 ### Fixed-route evaluation
 
-`RoutePlanner.evaluateRoute(...)` evaluates a route in a fixed visiting order and carries each stop's departure time into the next leg. This is a first step toward multi-stop planning without yet[...] 
-
-### Domain model
-
-The codebase includes:
-
-- `Stop`: a route location with type, time window, duration, and required flag
-- `Location`: a physical point with name/address and optional coordinates
-- `TimeWindow`: appointment start and end times
-- `StopType`: stop categories such as `JOB`, `PIT_STOP`, `HOME`, `BREAK`, `HQ`
-- `StopEvaluation`: result object containing `arrival`, `serviceStart`, `departure`, and `fitsWindow`
+`RoutePlanner.evaluateRoute(...)` evaluates a sequence of stops in order and carries each stop's departure time into the next leg. This is a useful first step toward multi-stop planning while still being deterministic and simple.
 
 ## Run locally
 
@@ -251,7 +118,7 @@ The application runs on port `8080` by default.
 
 ### GET `/stops/evaluate`
 
-This endpoint provides a demo evaluation using fixed sample values.
+Returns a demo evaluation using a fixed sample stop.
 
 ```bash
 curl http://localhost:8080/stops/evaluate
@@ -270,7 +137,7 @@ Example response:
 
 ### POST `/stops/evaluate`
 
-Send a JSON body like the example below:
+Send a JSON request body like this:
 
 ```bash
 curl -i -X POST http://localhost:8080/stops/evaluate \
@@ -295,49 +162,50 @@ Example response:
 }
 ```
 
-The system allows a service to end exactly at the window end.
+The system permits a service to end exactly at the window end.
 
-### Validation errors
+## Validation behavior
 
-Invalid requests return HTTP 400 with a plain-text message from `GlobalExceptionHandler`.
+Invalid requests return HTTP 400 responses from `GlobalExceptionHandler`.
 
-Examples:
+Typical validation failures include:
 
 - missing `previousDeparture`
-- negative `travelMinutes` or `durationMinutes`
-- only one of `windowStart` and `windowEnd` supplied
+- negative `travelMinutes`
+- negative `durationMinutes`
+- only one of `windowStart` or `windowEnd` supplied
 - `windowEnd` before `windowStart`
 
 ## Current status
 
-This repository is a working learning prototype for route scheduling logic. The most mature behavior is the time-window evaluation flow for single stops and fixed-order route evaluation. It is in[...]
+This repository is a working learning prototype for route scheduling logic. The most mature behavior is the time-window evaluation flow for single stops and fixed-order route evaluation.
 
 ## Roadmap
 
-Planned next steps include:
+Planned future work includes:
 
 - evaluate multiple stops in a fixed sequence with richer route context
-- add deterministic mock travel estimates
-- explore stop-order search with backtracking and pruning
-- investigate dynamic programming for route feasibility states
-- add a map-based or UI-based visualization layer
-- integrate real traffic-aware routing providers
-- support timezone-aware scheduling
+- deterministic mock travel estimates
+- stop-order search with backtracking and pruning
+- dynamic programming for route-feasibility states
+- map-based or UI-based visualization
+- real traffic-aware routing providers
+- timezone-aware scheduling
 
 ## Learning goals
 
-This project is being built as a learning-first implementation focused on:
+This project is intended to build practical experience with:
 
 - Java fundamentals and clean object modeling
 - Spring Boot and MVC APIs
 - domain modeling for route and scheduling problems
-- algorithmic thinking for route planning and optimization
-- practical experience with validation and testing
+- algorithmic thinking for optimization and feasibility checks
+- validation and test-driven development
 
 ## Notes
 
 The current design is intentionally incremental:
 
-- travel time is supplied by the caller instead of being fetched from a traffic provider
-- route composition is not yet multi-stop optimized
+- travel time is supplied by the caller instead of being fetched from a live provider
+- route composition is not yet optimized across all stop permutations
 - actual map integration and timezone-aware scheduling are future work
