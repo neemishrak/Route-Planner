@@ -1,6 +1,6 @@
 # Route Planner
 
-A Java and Spring Boot learning project for a traffic-aware, multi-stop appointment and route planner. The implementation has evolved beyond a single-stop prototype into a small scheduling service that can evaluate one stop or a fixed sequence of stops while preserving appointment windows and local date/time handling.
+A Java and Spring Boot learning project for a traffic-aware, multi-stop appointment and route planner. The implementation has evolved beyond a single-stop prototype into a small scheduling service that evaluates stop timings, validates appointment windows, and carries departure times through a fixed route.
 
 ## Latest changes
 
@@ -38,19 +38,114 @@ The project now includes:
 
 ## Architecture
 
-The project is organized into a small layered structure with a controller, service layer, and domain model.
+The application follows a small layered architecture: HTTP handling in the controller, scheduling logic in the service layer, and domain modeling for route and time-window concepts.
 
 ```mermaid
 classDiagram
-    RoutePlannerController --> RoutePlanner : calls
-    RoutePlanner --> StopEvaluation : creates
-    RoutePlanner --> Stop : reads
-    RoutePlanner --> TimeWindow : validates
-    Stop --> Location : location
-    Stop --> StopType : type
-    Stop --> "0..1" TimeWindow : optional window
-    GlobalExceptionHandler --> IllegalArgumentException : handles
-    RoutePlannerController --> StopEvaluationRequest : receives
+    direction LR
+
+    class RoutePlannerApplication
+    class RoutePlannerController {
+        +evaluateStop() StopEvaluation
+        +evaluateStop(request: StopEvaluationRequest) StopEvaluation
+    }
+    class RoutePlanner {
+        +calculateArrival(previousDeparture, travelMinutes)
+        +calculateServiceStart(arrival, windowStart)
+        +calculateDeparture(serviceStart, durationMinutes)
+        +fitsWindow(departure, windowEnd)
+        +evaluateStop(stop, previousDeparture, travelMinutes, windowStart, windowEnd, durationMinutes)
+        +evaluateStop(previousDeparture, travelMinutes, stop)
+        +evaluateRoute(stops, travelMinutes, initialDeparture)
+    }
+    class StopEvaluationRequest {
+        -Stop stop
+        -LocalDateTime previousDeparture
+        -int travelMinutes
+        +getStop()
+        +getPreviousDeparture()
+        +getTravelMinutes()
+    }
+    class StopEvaluation {
+        -Stop stop
+        -LocalDateTime arrival
+        -LocalDateTime serviceStart
+        -LocalDateTime departure
+        -boolean fitsWindow
+        +getArrival()
+        +getServiceStart()
+        +getDeparture()
+        +getFitsWindow()
+    }
+    class Stop {
+        -String id
+        -String name
+        -StopType stopType
+        -TimeWindow timeWindow
+        -Location location
+        -int durationMinutes
+        -boolean required
+        +getDurationMinutes()
+        +isRequired()
+    }
+    class Location {
+        -String name
+        -String address
+        -Double latitude
+        -Double longitude
+    }
+    class TimeWindow {
+        -LocalDateTime windowStart
+        -LocalDateTime windowEnd
+    }
+    class StopType {
+        <<enumeration>>
+        JOB
+        PIT_STOP
+        HOME
+        BREAK
+        HQ
+    }
+    class PlannerDemo {
+        +main(...)
+    }
+    class GlobalExceptionHandler {
+        +handleException(...)
+    }
+    class IllegalArgumentException
+
+    RoutePlannerApplication --> RoutePlannerController
+    RoutePlannerController --> RoutePlanner
+    RoutePlannerController --> StopEvaluationRequest
+    RoutePlannerController --> StopEvaluation
+    PlannerDemo --> RoutePlanner
+    PlannerDemo --> Stop
+    RoutePlanner --> Stop
+    RoutePlanner --> TimeWindow
+    RoutePlanner --> StopEvaluation
+    RoutePlanner --> StopEvaluationRequest
+    Stop --> TimeWindow
+    Stop --> Location
+    Stop --> StopType
+    StopEvaluation --> Stop
+    GlobalExceptionHandler ..> IllegalArgumentException
+```
+
+```mermaid
+sequenceDiagram
+    actor Client
+    participant Controller as RoutePlannerController
+    participant Service as RoutePlanner
+    participant StopModel as Stop
+    participant Window as TimeWindow
+
+    Client->>Controller: POST /stops/evaluate
+    Controller->>Service: evaluateStop(previousDeparture, travelMinutes, stop)
+    Service->>StopModel: read duration + optional window
+    StopModel->>Window: read windowStart/windowEnd
+    Service->>Service: calculate arrival, serviceStart, departure
+    Service-->>Controller: StopEvaluation
+    Controller-->>Client: JSON response
 ```
 
 ### Layer responsibilities
@@ -120,7 +215,7 @@ Appointment windows are optional. When both boundaries are missing, service star
 
 ### Fixed-route evaluation
 
-`RoutePlanner.evaluateRoute(...)` evaluates a route in a fixed visiting order and carries each stop's departure time into the next leg. This is a first step toward multi-stop planning without yet choosing the best order.
+`RoutePlanner.evaluateRoute(...)` evaluates a route in a fixed visiting order and carries each stop's departure time into the next leg. This is a first step toward multi-stop planning without yet performing route optimization.
 
 ### Domain model
 
@@ -209,7 +304,7 @@ Examples:
 
 ## Current status
 
-This repository is a working learning prototype for route scheduling logic. The most mature behavior is the time-window evaluation flow for single stops and fixed-order route evaluation. It is not yet a full production route-planning application.
+This repository is a working learning prototype for route scheduling logic. The most mature behavior is the time-window evaluation flow for single stops and fixed-order route evaluation. It is intentionally focused on deterministic timing logic rather than full optimization.
 
 ## Roadmap
 
@@ -240,4 +335,3 @@ The current design is intentionally incremental:
 - travel time is supplied by the caller instead of being fetched from a traffic provider
 - route composition is not yet multi-stop optimized
 - actual map integration and timezone-aware scheduling are future work
-
