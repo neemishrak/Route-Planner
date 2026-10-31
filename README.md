@@ -1,6 +1,6 @@
 # Route Planner
 
-A Java and Spring Boot learning project for a traffic-aware, multi-stop appointment and route planner. The implementation has evolved beyond a single-stop prototype into a small scheduling service that evaluates stop timings, validates appointment windows, and carries departure times through a fixed route.
+A Java and Spring Boot learning project for a traffic-aware, multi-stop appointment and route planner. The implementation has evolved beyond a single-stop prototype into a small scheduling service [...] 
 
 ## Latest changes
 
@@ -141,8 +141,14 @@ sequenceDiagram
 
     Client->>Controller: POST /stops/evaluate
     Controller->>Service: evaluateStop(previousDeparture, travelMinutes, stop)
-    Service->>StopModel: read duration + optional window
-    StopModel->>Window: read windowStart/windowEnd
+    Service->>StopModel: getDurationMinutes()
+    StopModel-->>Service: durationMinutes
+    Service->>StopModel: getTimeWindow()
+    StopModel-->>Service: TimeWindow
+    Service->>Window: getWindowStart()
+    Window-->>Service: windowStart
+    Service->>Window: getWindowEnd()
+    Window-->>Service: windowEnd
     Service->>Service: calculate arrival, serviceStart, departure
     Service-->>Controller: StopEvaluation
     Controller-->>Client: JSON response
@@ -164,7 +170,7 @@ Route-Planner/
 ├── src/
 │   ├── main/
 │   │   ├── java/com/neeraj/routeplanner/
-│   │   │   ├── GlobalExceptionHandler.java
+│   │   │   ├���─ GlobalExceptionHandler.java
 │   │   │   ├── Location.java
 │   │   │   ├── PlannerDemo.java
 │   │   │   ├── RoutePlanner.java
@@ -215,7 +221,7 @@ Appointment windows are optional. When both boundaries are missing, service star
 
 ### Fixed-route evaluation
 
-`RoutePlanner.evaluateRoute(...)` evaluates a route in a fixed visiting order and carries each stop's departure time into the next leg. This is a first step toward multi-stop planning without yet performing route optimization.
+`RoutePlanner.evaluateRoute(...)` evaluates a route in a fixed visiting order and carries each stop's departure time into the next leg. This is a first step toward multi-stop planning without yet[...] 
 
 ### Domain model
 
@@ -304,7 +310,7 @@ Examples:
 
 ## Current status
 
-This repository is a working learning prototype for route scheduling logic. The most mature behavior is the time-window evaluation flow for single stops and fixed-order route evaluation. It is intentionally focused on deterministic timing logic rather than full optimization.
+This repository is a working learning prototype for route scheduling logic. The most mature behavior is the time-window evaluation flow for single stops and fixed-order route evaluation. It is in[...]
 
 ## Roadmap
 
