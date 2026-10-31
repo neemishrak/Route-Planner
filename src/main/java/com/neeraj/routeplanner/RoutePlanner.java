@@ -1,7 +1,5 @@
 package com.neeraj.routeplanner;
-
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +14,12 @@ import java.util.List;
  */
 @Service
 public class RoutePlanner {
+
+    private final TravelTimeProvider travelTimeProvider;
+
+    public RoutePlanner(TravelTimeProvider travelTimeProvider) {
+        this.travelTimeProvider = travelTimeProvider;
+    }
 
     /**
      * Returns the latter of arrival and the appointment window's opening time.

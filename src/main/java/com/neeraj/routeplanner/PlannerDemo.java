@@ -13,7 +13,8 @@ public class PlannerDemo {
        timeWindowA.setWindowEnd(LocalDateTime.of(2026,10,26,10,15));
        LocalDateTime initialDeparture = LocalDateTime.of(2026,10,26,9,15);
        //Creating the StopA as a Job Type//
-       RoutePlanner routePlanner = new RoutePlanner();
+       TravelTimeProvider provider = new MockTravelTimeProvider();
+       RoutePlanner routePlanner = new RoutePlanner(provider);
        Stop stopA = new Stop();
        stopA.setTimeWindow(timeWindowA);
        stopA.setRequired(true);
