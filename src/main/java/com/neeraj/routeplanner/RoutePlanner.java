@@ -167,10 +167,20 @@ public class RoutePlanner {
             List<Stop> stops,
             Location startLocation,
             LocalDateTime initialDeparture){
+        //Validate Stops/StartLocation/Initial Departure  is provided//
+        if (stops == null) throw new IllegalArgumentException("Stops are Required");
+        if (startLocation == null) throw new IllegalArgumentException("StartLocation is Required");
+        if (initialDeparture == null) throw new IllegalArgumentException("Initial Departure is Required");
         List<StopEvaluation> evaluations = new ArrayList<>();
         Location previousLocation = startLocation;
         LocalDateTime previousDeparture = initialDeparture;
         for (Stop stop : stops) {
+            if (stop == null) {
+                throw new IllegalArgumentException("Route cannot contain a null stop");
+            }
+            if (stop.getLocation() == null) {
+                throw new IllegalArgumentException("Stop location is required");
+            }
             StopEvaluation result = evaluateStop(previousDeparture,
                     travelTimeProvider.getTravelMinutes(previousLocation, stop.getLocation(), previousDeparture), stop);
             evaluations.add(result);
@@ -180,7 +190,5 @@ public class RoutePlanner {
         return evaluations;
 
     }
-
-
 
 }

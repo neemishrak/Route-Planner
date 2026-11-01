@@ -9,6 +9,15 @@ import java.time.LocalTime;
 public class MockTravelTimeProvider implements TravelTimeProvider {
     @Override
     public int getTravelMinutes(Location origin, Location destination, LocalDateTime departure){
+        if (origin == null) {
+            throw new IllegalArgumentException("Origin is required");
+        }
+        if (destination == null) {
+            throw new IllegalArgumentException("destination is required");
+        }
+        if (departure == null) {
+            throw new IllegalArgumentException("departure is required");
+        }
         System.out.println(
                 origin.getId() + " -> " + destination.getId()
                         + " departing " + departure);
