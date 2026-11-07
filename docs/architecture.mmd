@@ -1,0 +1,98 @@
+---
+title: Route Planner — class diagram
+config:
+  theme: base
+  themeVariables:
+    primaryColor: '#e8f2ff'
+    primaryTextColor: '#17324d'
+    primaryBorderColor: '#3973ac'
+    lineColor: '#5d7185'
+    secondaryColor: '#ecfdf5'
+    tertiaryColor: '#fff7ed'
+---
+classDiagram
+  direction LR
+
+  class RoutePlannerController {
+    +evaluateStop() StopEvaluation
+    +evaluateStop(request) StopEvaluation
+  }
+  class RoutePlanner {
+    +evaluateStop(...)
+    +evaluateRoute(stops, start, departure) List~StopEvaluation~
+  }
+  class TravelTimeProvider {
+    <<interface>>
+    +getTravelMinutes(origin, destination, departure) int
+  }
+  class MockTravelTimeProvider {
+    +getTravelMinutes(origin, destination, departure) int
+  }
+  class TravelTimeProfile {
+    +getTravelMinutes(departure) int
+  }
+  class TravelTimeInterval {
+    +containsDepartureWindow(departure) boolean
+  }
+  class OriginDestKey {
+    <<record>>
+    +originId String
+    +destinationId String
+  }
+  class StopEvaluationRequest {
+    +previousDeparture LocalDateTime
+    +travelMinutes int
+    +stop Stop
+  }
+  class StopEvaluation {
+    +arrival LocalDateTime
+    +serviceStart LocalDateTime
+    +departure LocalDateTime
+    +fitsWindow boolean
+  }
+  class Stop {
+    +id String
+    +name String
+    +stopType StopType
+    +durationMinutes int
+    +required boolean
+  }
+  class Location {
+    +id String
+    +name String
+    +address String
+    +latitude Double
+    +longitude Double
+  }
+  class TimeWindow {
+    +windowStart LocalDateTime
+    +windowEnd LocalDateTime
+  }
+  class StopType {
+    <<enumeration>>
+    JOB
+    PIT_STOP
+    HOME
+    BREAK
+    HQ
+  }
+  class GlobalExceptionHandler {
+    +handleInvalidInput(exception) ResponseEntity
+  }
+
+  RoutePlannerController --> RoutePlanner : delegates to
+  RoutePlannerController ..> StopEvaluationRequest : accepts
+  RoutePlannerController ..> GlobalExceptionHandler : invalid input handled by
+  RoutePlanner ..> TravelTimeProvider : requests leg duration
+  TravelTimeProvider <|.. MockTravelTimeProvider : implements
+  MockTravelTimeProvider --> TravelTimeProfile : looks up
+  MockTravelTimeProvider --> OriginDestKey : indexes by
+  TravelTimeProfile "1" *-- "0..*" TravelTimeInterval : contains
+  RoutePlanner ..> Stop : evaluates
+  RoutePlanner ..> StopEvaluation : returns
+  StopEvaluationRequest --> Stop : contains
+  StopEvaluation --> Stop : describes
+  Stop "0..*" --> "0..1" Location : at
+  Stop "0..1" *-- "0..1" TimeWindow : appointment window
+  Stop --> StopType : categorized as
+  TravelTimeProvider ..> Location : origin and destination

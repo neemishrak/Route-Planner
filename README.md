@@ -1,110 +1,142 @@
-# Route Planner
+# 🗺️ Route Planner
 
-A Java and Spring Boot learning project for a traffic-aware, multi-stop appointment and route planner.
+> A Java + Spring Boot learning project for traffic-aware, multi-stop appointment scheduling.
 
-This project models the scheduling logic behind a route planner that evaluates stop timing, appointment windows, and fixed-order route sequencing without yet integrating live traffic data or map services.
+Route Planner calculates when to arrive, start a visit, and depart while respecting appointment windows. It can evaluate a stop on its own or process a fixed sequence of stops using travel times supplied by a provider.
 
-## Overview
+> **Project status:** learning prototype. Travel-time data is currently provided by a deterministic mock; there is no live maps, traffic, or route-optimization integration yet.
 
-The application focuses on one core question: given a previous departure time, travel duration, and a stop's appointment window, when should the traveler arrive, when should service begin, and when should they depart?
+## ✨ What it does
 
-It currently supports:
+- Calculates arrival, service start, and departure times for a stop.
+- Waits when a traveler arrives before an appointment window opens.
+- Checks whether service finishes by the window's end (finishing exactly at the end is allowed).
+- Evaluates a fixed stop sequence, carrying each stop's departure time into the next leg.
+- Selects mock travel durations by origin, destination, and departure-time interval.
+- Exposes single-stop evaluation through a small Spring MVC REST API.
+- Returns invalid input as HTTP `400 Bad Request`.
 
-- single-stop timing evaluation
-- appointment window handling with waiting logic
-- validation for invalid inputs
-- fixed-order route evaluation that carries each departure into the next leg
-- a Spring MVC REST API for demo and request-driven evaluation
+## 🧭 How it fits together
 
-## Features
+The controller accepts a request and delegates scheduling to `RoutePlanner`. For route evaluation, the planner asks a `TravelTimeProvider` for each leg's duration. The current Spring component, `MockTravelTimeProvider`, looks up a time-dependent profile. Stop data and appointment windows make up the domain model; each evaluation contains the resulting timing and window-fit status.
 
-- Evaluate a stop using travel time, appointment window, and service duration
-- Wait until the appointment window opens when arriving early
-- Preserve local date/time values across midnight boundaries
-- Reject invalid input such as missing times, negative travel/service duration, and reversed windows
-- Evaluate a fixed route in sequence using each stop's departure as the next leg's starting point
-- Expose the scheduling logic through a Spring Boot API
+```mermaid
+---
+title: Route Planner — class diagram
+config:
+  theme: base
+  themeVariables:
+    primaryColor: '#e8f2ff'
+    primaryTextColor: '#17324d'
+    primaryBorderColor: '#3973ac'
+    lineColor: '#5d7185'
+    secondaryColor: '#ecfdf5'
+    tertiaryColor: '#fff7ed'
+---
+classDiagram
+  direction LR
 
-## Tech stack
+  class RoutePlannerController {
+    +evaluateStop() StopEvaluation
+    +evaluateStop(request) StopEvaluation
+  }
+  class RoutePlanner {
+    +evaluateStop(...)
+    +evaluateRoute(stops, start, departure) List~StopEvaluation~
+  }
+  class TravelTimeProvider {
+    <<interface>>
+    +getTravelMinutes(origin, destination, departure) int
+  }
+  class MockTravelTimeProvider {
+    +getTravelMinutes(origin, destination, departure) int
+  }
+  class TravelTimeProfile {
+    +getTravelMinutes(departure) int
+  }
+  class TravelTimeInterval {
+    +containsDepartureWindow(departure) boolean
+  }
+  class OriginDestKey {
+    <<record>>
+    +originId String
+    +destinationId String
+  }
+  class StopEvaluationRequest {
+    +previousDeparture LocalDateTime
+    +travelMinutes int
+    +stop Stop
+  }
+  class StopEvaluation {
+    +arrival LocalDateTime
+    +serviceStart LocalDateTime
+    +departure LocalDateTime
+    +fitsWindow boolean
+  }
+  class Stop {
+    +id String
+    +name String
+    +stopType StopType
+    +durationMinutes int
+    +required boolean
+  }
+  class Location {
+    +id String
+    +name String
+    +address String
+    +latitude Double
+    +longitude Double
+  }
+  class TimeWindow {
+    +windowStart LocalDateTime
+    +windowEnd LocalDateTime
+  }
+  class StopType {
+    <<enumeration>>
+    JOB
+    PIT_STOP
+    HOME
+    BREAK
+    HQ
+  }
+  class GlobalExceptionHandler {
+    +handleInvalidInput(exception) ResponseEntity
+  }
 
-- Java 17
-- Spring Boot 4.1.2
-- Maven Wrapper
-- Spring Web MVC
-- Java Time API (`java.time.LocalDateTime`)
-
-## Architecture
-
-The project uses a small layered design:
-
-- `RoutePlannerController`: REST API endpoints
-- `RoutePlanner`: scheduling calculations and validation
-- `Stop`, `Location`, `TimeWindow`, `StopType`: domain model
-- `StopEvaluation`: response object returned to the client
-- `GlobalExceptionHandler`: converts invalid input into HTTP 400 responses
-
-## Project structure
-
-```text
-Route-Planner/
-├── src/
-│   ├── main/
-│   │   ├── java/com/neeraj/routeplanner/
-│   │   │   ├── GlobalExceptionHandler.java
-│   │   │   ├── Location.java
-│   │   │   ├── PlannerDemo.java
-│   │   │   ├── RoutePlanner.java
-│   │   │   ├── RoutePlannerApplication.java
-│   │   │   ├── RoutePlannerController.java
-│   │   │   ├── Stop.java
-│   │   │   ├── StopEvaluation.java
-│   │   │   ├── StopEvaluationRequest.java
-│   │   │   ├── StopType.java
-│   │   │   └── TimeWindow.java
-│   │   └── resources/
-│   │       └── application.properties
-│   └── test/java/com/neeraj/routeplanner/
-│       └── RoutePlannerApplicationTests.java
-├── .mvn/
-├── .gitattributes
-├── .gitignore
-├── mvnw
-├── mvnw.cmd
-├── pom.xml
-├── README.md
-└── .github/
+  RoutePlannerController --> RoutePlanner : delegates to
+  RoutePlannerController ..> StopEvaluationRequest : accepts
+  RoutePlannerController ..> GlobalExceptionHandler : invalid input handled by
+  RoutePlanner ..> TravelTimeProvider : requests leg duration
+  TravelTimeProvider <|.. MockTravelTimeProvider : implements
+  MockTravelTimeProvider --> TravelTimeProfile : looks up
+  MockTravelTimeProvider --> OriginDestKey : indexes by
+  TravelTimeProfile "1" *-- "0..*" TravelTimeInterval : contains
+  RoutePlanner ..> Stop : evaluates
+  RoutePlanner ..> StopEvaluation : returns
+  StopEvaluationRequest --> Stop : contains
+  StopEvaluation --> Stop : describes
+  Stop "0..*" --> "0..1" Location : at
+  Stop "0..1" *-- "0..1" TimeWindow : appointment window
+  Stop --> StopType : categorized as
+  TravelTimeProvider ..> Location : origin and destination
 ```
 
-## Core logic
+The diagram is also available as [Mermaid source](docs/architecture.mmd). The classes are in `src/main/java/com/neeraj/routeplanner/`.
 
-The planner currently supports these behaviors:
+## ⏱️ Scheduling behavior
 
-### Single-stop evaluation
+For each stop, the planner:
 
-`RoutePlanner.evaluateStop(...)` computes:
+1. Adds travel time to the previous departure to get the arrival time.
+2. Starts service at arrival, or waits until the appointment window opens.
+3. Adds the service duration to determine departure.
+4. Marks the stop as fitting if departure is no later than the window end.
 
-- arrival time from previous departure + travel duration
-- service start, waiting until the appointment window opens if needed
-- departure time after service duration
-- whether the stop remains within the appointment window
+Without an appointment window, service starts immediately on arrival. Inputs such as negative durations, missing required values, and incomplete or reversed windows are rejected. The current implementation uses `LocalDateTime`; it does not perform timezone conversion.
 
-Validation ensures:
+## 🚀 Run locally
 
-- required times are present
-- travel time is not negative
-- duration is not negative
-- both appointment window boundaries are supplied together
-- window end is not before window start
-
-### Fixed-route evaluation
-
-`RoutePlanner.evaluateRoute(...)` evaluates a sequence of stops in order and carries each stop's departure time into the next leg. This is a useful first step toward multi-stop planning while still being deterministic and simple.
-
-## Run locally
-
-Requirements:
-
-- JDK 17 or later
+**Requirements:** JDK 17 or later. Maven is included through the wrapper.
 
 ```bash
 git clone https://github.com/neemishrak/Route-Planner.git
@@ -112,100 +144,61 @@ cd Route-Planner
 ./mvnw spring-boot:run
 ```
 
-The application runs on port `8080` by default.
+The application starts on port `8080` by default. To run the test suite:
 
-## API endpoints
+```bash
+./mvnw test
+```
 
-### GET `/stops/evaluate`
+On Windows, use `mvnw.cmd` instead of `./mvnw`.
 
-Returns a demo evaluation using a fixed sample stop.
+## 🔌 API
+
+### `GET /stops/evaluate`
+
+Returns a demo stop evaluation.
 
 ```bash
 curl http://localhost:8080/stops/evaluate
 ```
 
-Example response:
+### `POST /stops/evaluate`
 
-```json
-{
-  "arrival": "2026-10-25T09:20:00",
-  "serviceStart": "2026-10-25T09:30:00",
-  "departure": "2026-10-25T10:15:00",
-  "fitsWindow": true
-}
-```
-
-### POST `/stops/evaluate`
-
-Send a JSON request body like this:
+Provide the previous departure, travel duration in minutes, and stop details. The appointment window is optional.
 
 ```bash
-curl -i -X POST http://localhost:8080/stops/evaluate \
-  -H "Content-Type: application/json" \
+curl -X POST http://localhost:8080/stops/evaluate \
+  -H 'Content-Type: application/json' \
   -d '{
-    "previousDeparture": "2026-10-25T23:30",
+    "previousDeparture": "2026-10-25T23:30:00",
     "travelMinutes": 20,
-    "windowStart": "2026-10-25T23:00",
-    "windowEnd": "2026-10-26T00:20",
-    "durationMinutes": 30
+    "stop": {
+      "id": "SUP-1",
+      "name": "Supplies",
+      "stopType": "PIT_STOP",
+      "durationMinutes": 30,
+      "required": true,
+      "timeWindow": {
+        "windowStart": "2026-10-25T23:00:00",
+        "windowEnd": "2026-10-26T00:20:00"
+      }
+    }
   }'
 ```
 
-Example response:
+The response is a `StopEvaluation` containing the stop, `arrival`, `serviceStart`, `departure`, and `fitsWindow`. Invalid input is reported as HTTP `400` with an explanatory message.
 
-```json
-{
-  "arrival": "2026-10-25T23:50:00",
-  "serviceStart": "2026-10-25T23:50:00",
-  "departure": "2026-10-26T00:20:00",
-  "fitsWindow": true
-}
-```
+## 🧱 Tech stack
 
-The system permits a service to end exactly at the window end.
+- Java 17
+- Spring Boot 4.1.2 and Spring Web MVC
+- Maven Wrapper
+- Java Time API (`LocalDateTime`)
 
-## Validation behavior
+## 🛣️ Next steps
 
-Invalid requests return HTTP 400 responses from `GlobalExceptionHandler`.
+Ideas for growing the prototype include richer route evaluation, stop-order optimization, timezone-aware scheduling, map visualization, and integration with a real traffic-aware routing provider.
 
-Typical validation failures include:
+---
 
-- missing `previousDeparture`
-- negative `travelMinutes`
-- negative `durationMinutes`
-- only one of `windowStart` or `windowEnd` supplied
-- `windowEnd` before `windowStart`
-
-## Current status
-
-This repository is a working learning prototype for route scheduling logic. The most mature behavior is the time-window evaluation flow for single stops and fixed-order route evaluation.
-
-## Roadmap
-
-Planned future work includes:
-
-- evaluate multiple stops in a fixed sequence with richer route context
-- deterministic mock travel estimates
-- stop-order search with backtracking and pruning
-- dynamic programming for route-feasibility states
-- map-based or UI-based visualization
-- real traffic-aware routing providers
-- timezone-aware scheduling
-
-## Learning goals
-
-This project is intended to build practical experience with:
-
-- Java fundamentals and clean object modeling
-- Spring Boot and MVC APIs
-- domain modeling for route and scheduling problems
-- algorithmic thinking for optimization and feasibility checks
-- validation and test-driven development
-
-## Notes
-
-The current design is intentionally incremental:
-
-- travel time is supplied by the caller instead of being fetched from a live provider
-- route composition is not yet optimized across all stop permutations
-- actual map integration and timezone-aware scheduling are future work
+Built as a hands-on project in scheduling, domain modeling, and Spring Boot APIs.
