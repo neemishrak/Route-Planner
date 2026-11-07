@@ -28,15 +28,15 @@ public class PlannerDemo {
        //Creating the StopA as a Job Type//
        TravelTimeProvider provider = new MockTravelTimeProvider();
        RoutePlanner routePlanner = new RoutePlanner(provider);
+       System.out.println();
+       System.out.println("--------------------------------------------------------");
        Stop stopA = new Stop();
        stopA.setTimeWindow(timeWindowA);
        stopA.setRequired(true);
        stopA.setStopType(StopType.JOB);
        stopA.setName("Job - Design Consultation");
-       stopA.setDurationMinutes(40);
+       stopA.setDurationMinutes(45);
        stopA.setId("stop-a");
-
-
        // Create a supplies stop without an appointment window//
        Stop stopB = new Stop();
        stopB.setName("Supplies");
@@ -44,10 +44,8 @@ public class PlannerDemo {
        stopB.setRequired(true);
        stopB.setDurationMinutes(20);
        stopB.setId("stop-b");
-
        stopA.setLocation(jobLocation);
        stopB.setLocation(suppliesLocation);
-
        List<Stop> stops = new ArrayList<>();
        stops.add(stopA);
        stops.add(stopB);
@@ -55,7 +53,7 @@ public class PlannerDemo {
                routePlanner.evaluateRoute(stops, startLocation,initialDeparture);
        for (StopEvaluation evaluation : evaluations) {
           System.out.println(
-                  evaluation.getStop().getName() + " "
+                  evaluation.getStop().getName() + "      "
                           + evaluation.getStop().getStopType() + " | "
                           + evaluation.getArrival() + " | "
                           + evaluation.getDeparture() + " | "

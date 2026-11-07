@@ -3,10 +3,46 @@ package com.neeraj.routeplanner;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class MockTravelTimeProvider implements TravelTimeProvider {
+
+    private final Map<OriginDestKey, TravelTimeProfile> travelTimeProfileMap = new HashMap<>();
+    public MockTravelTimeProvider() {
+        OriginDestKey jobToSuppliesKey =
+                new OriginDestKey("loc-job", "loc-supplies");
+
+        TravelTimeInterval jobToSuppliesEarlyInterval = new TravelTimeInterval(
+                LocalDateTime.of(2026, 10, 26, 10, 20),
+                LocalDateTime.of(2026, 10, 26, 10, 30),
+                20);
+
+        TravelTimeInterval jobToSuppliesLaterInterval = new TravelTimeInterval(
+                LocalDateTime.of(2026, 10, 26, 10, 30),
+                LocalDateTime.of(2026, 10, 26, 10, 40),
+                30);
+
+        TravelTimeProfile jobToSuppliesProfile = new TravelTimeProfile(
+                List.of(jobToSuppliesEarlyInterval, jobToSuppliesLaterInterval));
+
+        travelTimeProfileMap.put(jobToSuppliesKey, jobToSuppliesProfile);
+
+        OriginDestKey homeToJobKey =
+                new OriginDestKey("loc-home", "loc-job");
+
+        TravelTimeInterval homeToJobInterval = new TravelTimeInterval(
+                LocalDateTime.of(2026, 10, 26, 9, 0),
+                LocalDateTime.of(2026, 10, 26, 10, 0),
+                25);
+
+        TravelTimeProfile homeToJobProfile =
+                new TravelTimeProfile(List.of(homeToJobInterval));
+
+        travelTimeProfileMap.put(homeToJobKey, homeToJobProfile);
+    }
     @Override
     public int getTravelMinutes(Location origin, Location destination, LocalDateTime departure){
         if (origin == null) {
@@ -21,16 +57,9 @@ public class MockTravelTimeProvider implements TravelTimeProvider {
         System.out.println(
                 origin.getId() + " -> " + destination.getId()
                         + " departing " + departure);
-
-        if ("loc-home".equals(origin.getId())
-                && "loc-job".equals(destination.getId())) {
-            return 25;
-        }
-        if ("loc-supplies".equals(destination.getId()) && "loc-job".equals(origin.getId()))
-                {
-            return departure.toLocalTime().isBefore(LocalTime.of(10, 30)) ? 20 :30;
-        } else throw new IllegalArgumentException("No Mock travel time for this pair");
-
-
+        OriginDestKey key = new OriginDestKey(origin.getId(), destination.getId());
+        TravelTimeProfile profile = travelTimeProfileMap.get(key);
+        if (profile == null) throw new IllegalArgumentException("No mock travel time for this pair");
+        return profile.getTravelMinutes(departure);
     }
 }
