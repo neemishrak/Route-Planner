@@ -9,11 +9,11 @@ package com.neeraj.routeplanner;
 public class Location {
     private String id;
     private String name;
-    private String address;
+    private Address address;
     private Double latitude;
     private Double longitude;
 
-    public String getAddress() {
+    public Address getAddress() {
         return address;
     }
 
@@ -33,7 +33,7 @@ public class Location {
         return name;
     }
 
-    public void setAddress(String address) {
+    public void setAddress(Address address) {
         this.address = address;
     }
 
@@ -52,4 +52,6 @@ public class Location {
     public void setName(String name) {
         this.name = name;
     }
+
+
 }
