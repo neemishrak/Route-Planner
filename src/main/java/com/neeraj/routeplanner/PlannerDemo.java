@@ -46,11 +46,20 @@ public class PlannerDemo {
        stopB.setId("stop-b");
        stopA.setLocation(jobLocation);
        stopB.setLocation(suppliesLocation);
+       //Create a Final Route from Supplies to Home//
+       Stop stopH = new Stop();
+       stopH.setLocation(startLocation);
+       stopH.setRequired(true);
+       stopH.setStopType(StopType.HOME);
+       stopH.setName("Home");
+
        List<Stop> stops = new ArrayList<>();
        stops.add(stopA);
        stops.add(stopB);
+       stops.add(stopH);
+       RoutePlan routePlan = new RoutePlan(startLocation,initialDeparture,stops);
        List<StopEvaluation> evaluations =
-               routePlanner.evaluateRoute(stops, startLocation,initialDeparture);
+               routePlanner.evaluateRoute(routePlan);
        for (StopEvaluation evaluation : evaluations) {
           System.out.println(
                   evaluation.getStop().getName() + "      "

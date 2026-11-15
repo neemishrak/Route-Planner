@@ -5,12 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Calculates timing and appointment-window feasibility for a single stop.
+ * Evaluates individual stops and routes in the supplied stop order.
+ * For each route leg, gets travel time from the travel-time provider
+ * and carries the evaluated stop's departure into the next leg.
  *
- * <p>Travel time is supplied by the caller. This class does not currently
- * retrieve traffic estimates or choose the order of stops.
- *
- * <p>Uses local dates and times in one shared timezone; timezone conversion is not supported.
+ * <p>Uses local dates and times in one shared timezone.
  */
 @Service
 public class RoutePlanner {
@@ -131,7 +130,7 @@ public class RoutePlanner {
     }
      /**
      * Evaluates a stop using its appointment window and service duration.
-     * Delegates calculations and input validation to the five-argument overload.
+     * Delegates calculations and input validation to the six-argument overload.
      *
      * @param previousDeparture departure time from the preceding location
      * @param travelMinutes travel duration to this stop, in minutes
@@ -157,24 +156,21 @@ public class RoutePlanner {
     }
     /**
      * Evaluates one fixed stop order, carrying each departure into the next leg.
-     *
-     * @param stops stops in visiting order
-     * @param startLocation location from which the route begins
-     * @param initialDeparture departure date and time from the start location
+     * @param routePlan origin, initial departure, and stops in visit order.
      * @return stop evaluations in the supplied order
      */
     public List<StopEvaluation> evaluateRoute(
-            List<Stop> stops,
-            Location startLocation,
-            LocalDateTime initialDeparture){
+            RoutePlan routePlan){
         //Validate Stops/StartLocation/Initial Departure  is provided//
-        if (stops == null) throw new IllegalArgumentException("Stops are Required");
-        if (startLocation == null) throw new IllegalArgumentException("StartLocation is Required");
-        if (initialDeparture == null) throw new IllegalArgumentException("Initial Departure is Required");
+        if (routePlan == null) throw new IllegalArgumentException("RoutePlan is null");
+        if (routePlan.getStops() == null) throw new IllegalArgumentException("Stops are Required");
+        if (routePlan.getOrigin() == null) throw new IllegalArgumentException("StartLocation is Required");
+        if (routePlan.getDeparture() == null) throw new IllegalArgumentException("Initial Departure is Required");
+
         List<StopEvaluation> evaluations = new ArrayList<>();
-        Location previousLocation = startLocation;
-        LocalDateTime previousDeparture = initialDeparture;
-        for (Stop stop : stops) {
+        Location previousLocation = routePlan.getOrigin();
+        LocalDateTime previousDeparture = routePlan.getDeparture();
+        for (Stop stop : routePlan.getStops()) {
             if (stop == null) {
                 throw new IllegalArgumentException("Route cannot contain a null stop");
             }
